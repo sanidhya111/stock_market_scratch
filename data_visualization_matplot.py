@@ -24,7 +24,7 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-def stock_plot(datas, column_names):
+def stock_plot(datas, column_names, dates):
     rows = int((len(datas) + 1) // 2)
     fig = make_subplots(
         rows=rows,
@@ -37,16 +37,26 @@ def stock_plot(datas, column_names):
     for i, data in enumerate(datas):
         row = (i // 2) + 1
         col = (i % 2) + 1
-        x = list(range(len(data)))  # Linear spacing since timestamps aren't used yet
+
+        # Use real dates if available, fallback to linear spacing
+        x = dates if dates is not None else list(range(len(data)))
+
         label = column_names[i].replace("📈 ", "").replace(" Price", "")
 
         fig.add_trace(
-            go.Scatter(x=x, y=data, mode="lines", name=label, showlegend=True),
-            row=row, col=col
+            go.Scatter(
+                x=x,
+                y=data,
+                mode="lines",
+                name=label,
+                showlegend=True,
+                hovertemplate="%{x|%b %d, %Y}<br>%{y:.2f}" if dates is not None else "%{x}<br>%{y:.2f}"
+            ),
+            row=row,
+            col=col
         )
 
-        # Add axis labels for each subplot
-        fig.update_xaxes(title_text="Linear spaced", row=row, col=col)
+        fig.update_xaxes(title_text="Date" if dates is not None else "Linear spaced", row=row, col=col)
         fig.update_yaxes(title_text=f"{label} Price", row=row, col=col)
 
     fig.update_layout(

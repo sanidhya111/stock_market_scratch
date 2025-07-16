@@ -4,22 +4,28 @@ import pandas as pd
 
 # Processing Stock DATA
 def processed_stock_data(raw_stock_df):
-    stock_time_series_df = raw_stock_df['Time Series (Daily)'][5:]
-    stock_name_frm_df = raw_stock_df['Meta Data'][1]
-    stock_date_frm_df = raw_stock_df['Meta Data'][2]
+    df = raw_stock_df.copy()
 
-    # Extract keys of the dictionary series for imported stock data
+    # Sanitize column names (in case future sources introduce messy formatting)
+    df.columns = [col.lower().strip() for col in df.columns]
 
-    dict_series = stock_time_series_df.apply(lambda x:ast.literal_eval(x) if isinstance(x, str) else x)
-    all_keys = dict_series.apply(lambda x: set(x.keys()))
-    master_keys = set().union(*all_keys)
-    sorted_master_keys = sorted(master_keys)
+    # Ensure date column is datetime-type
+    if 'date' in df.columns:
+        df['date'] = pd.to_datetime(df['date'])
 
-    stock_processed_data = pd.DataFrame({key: stock_time_series_df.apply(lambda x:ast.literal_eval(x)[key] if isinstance(x, str) else x[key])
-                                   for key in sorted_master_keys})
+    # Drop any non-numeric metadata if needed (like 'volume', 'symbol') — optional
+    numeric_cols = df.select_dtypes(include='number').columns.tolist()
+    processed_data = df[['date'] + numeric_cols] if 'date' in df.columns else df[numeric_cols]
 
-    stock_processed_data = stock_processed_data.astype(float)
-    stock_processed_data.index = range(1, len(stock_processed_data)+1)
-    return stock_processed_data
+    # Example: sort by date and compute indicators
+    processed_data = processed_data.sort_values(by='date')
+    if 'close' in processed_data.columns:
+        processed_data['sma_5'] = processed_data['close'].rolling(window=5).mean()
+        processed_data['sma_10'] = processed_data['close'].rolling(window=10).mean()
+
+    # Reset index for Streamlit-friendly display
+    processed_data = processed_data.reset_index(drop=True)
+
+    return processed_data
 
 # END

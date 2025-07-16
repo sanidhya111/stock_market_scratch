@@ -112,10 +112,11 @@ if selected_stock:
 
         # Prepare data and labels
         datas = [processed_stock_df[col] for col in stock_columns_list]
-        column_names = [f"📈 {col.split('. ')[-1].capitalize()} Price" for col in stock_columns_list]
+        column_names = [f"📈 {col.capitalize()} Plot" for col in stock_columns_list]
+        dates = processed_stock_df['date']  # Optional, used if present
 
         # Call the Plotly version
-        fig = stock_plot(datas=datas, column_names=column_names)
+        fig = stock_plot(datas=datas, column_names=column_names, dates=dates)
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -134,10 +135,11 @@ if selected_stock:
 
         # Prepare data and labels
         datas = [processed_stock_df[col] for col in stock_columns_list]
-        column_names = [f"📈 {col.split('. ')[-1].capitalize()} Price" for col in stock_columns_list]
+        column_names = [f"📈 {col.capitalize()} Plot" for col in stock_columns_list]
+        dates = processed_stock_df['date']  # Optional, used if present
 
         # Call the Plotly version
-        fig = stock_plot(datas=datas, column_names=column_names)
+        fig = stock_plot(datas=datas, column_names=column_names, dates=dates)
         st.plotly_chart(fig, use_container_width=True)
 
     else:

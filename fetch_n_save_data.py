@@ -15,32 +15,25 @@ today = today.strftime('%d-%m-%Y')
 download_dir = 'downloaded_data'
 os.makedirs(download_dir, exist_ok=True)
 
-def raw_stock_data(user_input, refresh_stock_data='n'):
-    stock_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={user_input}&outputsize=full&apikey={alpha_vantage_api_key}"
 
-    # Get the dates
-    response = requests.get(stock_url)
-    data = response.json()
-    print(f"Raw stock data:\n{data}")
-    series = data.get("Time Series (Daily)", {})
-    dates = sorted([datetime.datetime.strptime(d, "%Y-%m-%d") for d in series.keys()], reverse=True)
-    print(f'Printing dates here:{dates}')
-    # END for dates
-
+def raw_stock_data(user_input, refresh_stock_data):
+    stock_url = (
+        f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY"
+        f"&symbol={user_input}&outputsize=full&apikey={alpha_vantage_api_key}"
+    )
 
     stock_name = re.sub(r"\W+", "_", user_input.lower())
     today_str = datetime.date.today().strftime('%d-%m-%Y')
     stock_filepath_today = os.path.join(download_dir, f"raw_df_{stock_name}_{today_str}.csv")
 
     if refresh_stock_data == "n":
-        # Look for the latest existing file for this stock
+        # Check for latest existing file
         pattern = os.path.join(download_dir, f"raw_df_{stock_name}_*.csv")
         existing_files = glob.glob(pattern)
 
         def extract_date(filename):
             try:
-                parts = filename.replace(".csv", "").split("_")
-                date_str = parts[-1]
+                date_str = filename.replace(".csv", "").split("_")[-1]
                 return datetime.datetime.strptime(date_str, "%d-%m-%Y")
             except:
                 return datetime.datetime.min
@@ -48,20 +41,38 @@ def raw_stock_data(user_input, refresh_stock_data='n'):
         valid_files = [(f, extract_date(f)) for f in existing_files if os.path.exists(f)]
         if valid_files:
             latest_file = sorted(valid_files, key=lambda x: x[1])[-1][0]
-            print(f"\nNote: Using existing local file {latest_file}\n")
-            df = pd.read_csv(latest_file)
+            print(f"\n📂 Using existing local file: {latest_file}\n")
+            df = pd.read_csv(latest_file, parse_dates=['date']) if 'date' in pd.read_csv(latest_file, nrows=1).columns else pd.read_csv(latest_file)
             return df
 
-        print("\n⚠️ Warning: No local files found — cannot proceed without download.\n")
+        print("\n⚠️ No local files found — cannot proceed without download.\n")
         return pd.DataFrame()
 
-    else:
-        print(f"\nNote: Downloading fresh stock data for {user_input}\n")
-        response = requests.get(stock_url)
-        data = response.json()
-        df = pd.DataFrame(data)
-        df.to_csv(stock_filepath_today, index=False)
-        return df
+    # Download fresh data from API
+    print(f"\n⬇️ Downloading fresh stock data for {user_input}\n")
+    response = requests.get(stock_url)
+    data = response.json()
+    raw_series = data.get("Time Series (Daily)", {})
+
+    if not raw_series:
+        print("❌ No data returned from API.")
+        return pd.DataFrame()
+
+    # Convert to DataFrame
+    df = pd.DataFrame.from_dict(raw_series, orient='index')
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index()
+
+    # Clean column names
+    df.columns = [col.split('. ')[-1].lower() for col in df.columns]
+    df = df.astype(float)
+    df.reset_index(inplace=True)
+    df.rename(columns={'index': 'date'}, inplace=True)
+
+    # Save and return
+    df.to_csv(stock_filepath_today, index=False)
+    print(f"✅ Saved fresh data to: {stock_filepath_today}")
+    return df
 
 def raw_stock_list(refresh_stocklist='n'):
     stock_list_url = f"https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={alpha_vantage_api_key}"
