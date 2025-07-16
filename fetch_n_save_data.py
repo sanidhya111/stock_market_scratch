@@ -15,8 +15,19 @@ today = today.strftime('%d-%m-%Y')
 download_dir = 'downloaded_data'
 os.makedirs(download_dir, exist_ok=True)
 
-def raw_stock_data(user_input, refresh_stock_data):
+def raw_stock_data(user_input, refresh_stock_data='n'):
     stock_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={user_input}&outputsize=full&apikey={alpha_vantage_api_key}"
+
+    # Get the dates
+    response = requests.get(stock_url)
+    data = response.json()
+    print(f"Raw stock data:\n{data}")
+    series = data.get("Time Series (Daily)", {})
+    dates = sorted([datetime.datetime.strptime(d, "%Y-%m-%d") for d in series.keys()], reverse=True)
+    print(f'Printing dates here:{dates}')
+    # END for dates
+
+
     stock_name = re.sub(r"\W+", "_", user_input.lower())
     today_str = datetime.date.today().strftime('%d-%m-%Y')
     stock_filepath_today = os.path.join(download_dir, f"raw_df_{stock_name}_{today_str}.csv")

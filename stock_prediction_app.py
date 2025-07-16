@@ -5,6 +5,7 @@ import datetime
 import os
 import glob
 import re
+from data_visualization_matplot import stock_plot
 
 
 today = datetime.date.today()
@@ -105,6 +106,20 @@ if selected_stock:
         processed_stock_df = processed_stock_data(raw_stock_df)
         st.write(processed_stock_df)
 
+
+        # Extract target columns from DataFrame
+        stock_columns_list = processed_stock_df.columns[:-1]
+
+        # Prepare data and labels
+        datas = [processed_stock_df[col] for col in stock_columns_list]
+        column_names = [f"📈 {col.split('. ')[-1].capitalize()} Price" for col in stock_columns_list]
+
+        # Call the Plotly version
+        fig = stock_plot(datas=datas, column_names=column_names)
+        st.plotly_chart(fig, use_container_width=True)
+
+
+
     elif st.session_state.refresh_stock_data == "n":
         st.info("📁 Using local stock data.")
         raw_stock_df = raw_stock_data(
@@ -113,6 +128,17 @@ if selected_stock:
         )
         processed_stock_df = processed_stock_data(raw_stock_df)
         st.write(processed_stock_df)
+
+        # Extract target columns from DataFrame
+        stock_columns_list = processed_stock_df.columns[:-1]
+
+        # Prepare data and labels
+        datas = [processed_stock_df[col] for col in stock_columns_list]
+        column_names = [f"📈 {col.split('. ')[-1].capitalize()} Price" for col in stock_columns_list]
+
+        # Call the Plotly version
+        fig = stock_plot(datas=datas, column_names=column_names)
+        st.plotly_chart(fig, use_container_width=True)
 
     else:
         st.info("📌 Waiting for your choice: Download fresh data or use local.")
