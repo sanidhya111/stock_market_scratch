@@ -5,6 +5,8 @@ import requests
 import re # to remove all the special characters from the user_input
 from io import StringIO # Correcting import of stock list data
 import datetime
+import glob
+
 
 today = datetime.date.today()
 today = today.strftime('%d-%m-%Y')
@@ -13,24 +15,42 @@ today = today.strftime('%d-%m-%Y')
 download_dir = 'downloaded_data'
 os.makedirs(download_dir, exist_ok=True)
 
-
-# ✅ FIX: Accept user_input as argument instead of hardcoding
 def raw_stock_data(user_input, refresh_stock_data):
-    stock_name = re.sub(r"\W+", "_", user_input.lower())
     stock_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={user_input}&outputsize=full&apikey={alpha_vantage_api_key}"
-    stock_filepath = os.path.join(download_dir, f"raw_df_{stock_name}_{today}.csv")
+    stock_name = re.sub(r"\W+", "_", user_input.lower())
+    today_str = datetime.date.today().strftime('%d-%m-%Y')
+    stock_filepath_today = os.path.join(download_dir, f"raw_df_{stock_name}_{today_str}.csv")
 
-    if refresh_stock_data == 'n' and os.path.exists(stock_filepath):
-        print(f"\nNote: Using local stock data file {stock_filepath}\n")
-        df = pd.read_csv(stock_filepath)
+    if refresh_stock_data == "n":
+        # Look for the latest existing file for this stock
+        pattern = os.path.join(download_dir, f"raw_df_{stock_name}_*.csv")
+        existing_files = glob.glob(pattern)
+
+        def extract_date(filename):
+            try:
+                parts = filename.replace(".csv", "").split("_")
+                date_str = parts[-1]
+                return datetime.datetime.strptime(date_str, "%d-%m-%Y")
+            except:
+                return datetime.datetime.min
+
+        valid_files = [(f, extract_date(f)) for f in existing_files if os.path.exists(f)]
+        if valid_files:
+            latest_file = sorted(valid_files, key=lambda x: x[1])[-1][0]
+            print(f"\nNote: Using existing local file {latest_file}\n")
+            df = pd.read_csv(latest_file)
+            return df
+
+        print("\n⚠️ Warning: No local files found — cannot proceed without download.\n")
+        return pd.DataFrame()
+
     else:
         print(f"\nNote: Downloading fresh stock data for {user_input}\n")
         response = requests.get(stock_url)
         data = response.json()
         df = pd.DataFrame(data)
-        df.to_csv(stock_filepath, index=False)
-
-    return df
+        df.to_csv(stock_filepath_today, index=False)
+        return df
 
 def raw_stock_list(refresh_stocklist='n'):
     stock_list_url = f"https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={alpha_vantage_api_key}"
