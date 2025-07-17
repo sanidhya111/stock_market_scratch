@@ -16,6 +16,7 @@ download_dir = 'downloaded_data'
 os.makedirs(download_dir, exist_ok=True)
 
 
+# Function to fetch and save stock data
 def raw_stock_data(user_input, refresh_stock_data):
     stock_url = (
         f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY"
@@ -83,7 +84,7 @@ def raw_stock_list(refresh_stocklist='n'):
         stock_list_df = pd.read_csv(stock_list_filepath)
         print(f"\nNote: Using local stock list file {stock_list_filepath}\n")
     else:
-        print(f"\nNote: Stock list missing or refresh requested. Downloading...\n")
+        print(f"\nNote: Auto refreshing Stock list for today: {today}. Downloading...\n")
         response = requests.get(stock_list_url)
         decoded = response.content.decode("utf-8")
         stock_list_df = pd.read_csv(StringIO(decoded))

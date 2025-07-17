@@ -1,24 +1,3 @@
-# import matplotlib.pyplot as plt
-# import numpy as np
-#
-# def stock_plot(datas, column_names):
-#     rows = int(np.ceil(len(datas) / 2))
-#     fig, axs = plt.subplots(rows, 2, figsize=(12, 4 * rows))
-#     axs = axs.flatten()
-#
-#     for i, data in enumerate(datas):
-#         x = np.linspace(0, len(data), len(data))
-#         axs[i].plot(x, data)  # Label removed because wanted to use column name directly
-#     for j, name in enumerate(column_names):
-#         axs[j].set_title(name, pad=20)
-#         axs[j].set_xlabel("Linear spaced")
-#         axs[j].set_ylabel(f"{name} Price")
-#         axs[j].legend()
-#         axs[j].grid(True)
-#     plt.tight_layout()
-#     return fig
-
-
 # As matplotlib is not interactive on STREAMLIT, changing over to Plotly
 
 import plotly.graph_objects as go

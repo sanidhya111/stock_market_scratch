@@ -1,43 +1,13 @@
 import streamlit as st
 from fetch_n_save_data import raw_stock_list, raw_stock_data
-from data_processing import processed_stock_data
+from data_processing import processed_stock_data, get_latest_stock_file_date, label_frm_columns, sanitized_data
 import datetime
-import os
-import glob
-import re
-from data_visualization_matplot import stock_plot
+from data_visualization import stock_plot
 
 
 today = datetime.date.today()
 today = today.strftime('%d-%m-%Y')
 
-# pattern = os.path.join(download_dir, "stock_list_*.csv") ## this pattern is for stock list
-
-# Date extraction from the existing files
-download_dir = "downloaded_data"
-
-# 📌 Utility function for file date extraction (Place this here!)
-def get_latest_stock_file_date(symbol):
-    stock_name = re.sub(r"\W+", "_", symbol.lower())
-    pattern = os.path.join(download_dir, f"raw_df_{stock_name}_*.csv")
-    matching_files = glob.glob(pattern)
-
-    def extract_date(filename):
-        try:
-            parts = filename.replace(".csv", "").split("_")
-            date_str = parts[-1]
-            return datetime.datetime.strptime(date_str, "%d-%m-%Y")
-        except Exception:
-            return None
-
-    dated_files = [(f, extract_date(f)) for f in matching_files if extract_date(f)]
-    if dated_files:
-        latest_file, latest_date = sorted(dated_files, key=lambda x: x[1])[-1]
-        return latest_file, latest_date.strftime("%d-%m-%Y")
-    else:
-        return None, "Not available"
-
-# END of date extraction code
 
 # Stock list Function call
 raw_stock_list_df = raw_stock_list()
@@ -47,6 +17,8 @@ st.header("My Stock Prediction App")
 st.subheader('Stock List')
 st.write(raw_stock_list_df)
 
+
+# Function to get the user stock selection from the Streamlit app
 def data_frm_streamlit():
     selected_stock = st.selectbox('Select a Stock Symbol from dropdown', raw_stock_list_df, placeholder="Select a Stock Symbol", index=None)
     selected_stock_data = raw_stock_list_df[raw_stock_list_df['symbol'] == selected_stock]
@@ -104,21 +76,24 @@ if selected_stock:
             refresh_stock_data="y"
         )
         processed_stock_df = processed_stock_data(raw_stock_df)
+        _, column_names, dates, null_count_dict = label_frm_columns(processed_stock_df)
+
+        datas, null_dict = sanitized_data(processed_stock_df)
+
         st.write(processed_stock_df)
+        # st.subheader("Showing the raw data null count below:")
+        st.markdown(f"##### Showing the raw data null count below:")
+        st.markdown(f"####### {null_count_dict}")
+
+        # Total data count
+        # st.subheader("Showing the total data below, after filling null with mean:")
+        st.markdown(f"##### Showing the total data below, after filling null with mean:")
+        st.markdown(f"####### {null_dict}")
 
 
-        # Extract target columns from DataFrame
-        stock_columns_list = processed_stock_df.columns[:-1]
-
-        # Prepare data and labels
-        datas = [processed_stock_df[col] for col in stock_columns_list]
-        column_names = [f"📈 {col.capitalize()} Plot" for col in stock_columns_list]
-        dates = processed_stock_df['date']  # Optional, used if present
-
-        # Call the Plotly version
+        # Call the Plot function
         fig = stock_plot(datas=datas, column_names=column_names, dates=dates)
         st.plotly_chart(fig, use_container_width=True)
-
 
 
     elif st.session_state.refresh_stock_data == "n":
@@ -128,17 +103,21 @@ if selected_stock:
             refresh_stock_data="n"
         )
         processed_stock_df = processed_stock_data(raw_stock_df)
+        _, column_names, dates, null_count_dict = label_frm_columns(processed_stock_df)
+
+        datas, null_dict = sanitized_data(processed_stock_df)
+
         st.write(processed_stock_df)
+        # st.subheader("Showing the raw data null count below:")
+        st.markdown(f"##### Showing the raw data null count below:")
+        st.markdown(f"####### {null_count_dict}")
 
-        # Extract target columns from DataFrame
-        stock_columns_list = processed_stock_df.columns[:-1]
+        # Total data count
+        # st.subheader("Showing the total data below, after filling null with mean:")
+        st.markdown(f"##### Showing the total data below, after filling null with mean:")
+        st.markdown(f"####### {null_dict}")
 
-        # Prepare data and labels
-        datas = [processed_stock_df[col] for col in stock_columns_list]
-        column_names = [f"📈 {col.capitalize()} Plot" for col in stock_columns_list]
-        dates = processed_stock_df['date']  # Optional, used if present
-
-        # Call the Plotly version
+        # Call the Plot function
         fig = stock_plot(datas=datas, column_names=column_names, dates=dates)
         st.plotly_chart(fig, use_container_width=True)
 
