@@ -83,6 +83,7 @@ def label_frm_columns(processed_stock_df):
 
     return datas, column_names, dates, null_count_dict
 
+# Below code returns data as a series
 def sanitized_data(processed_stock_data):
     # data has some missing values, replacing it mean value and skipping the data column
     sanitized_datas, column_names, dates,_ = label_frm_columns(processed_stock_data)
@@ -103,6 +104,33 @@ def sanitized_data(processed_stock_data):
 
     return sanitized_datas, null_count_dict
 
+# To use the sanitized data in main.py Dataframe is required
+def sanitized_data_df(processed_stock_df):
+    sanitized_datas, column_names, dates, _ = label_frm_columns(processed_stock_df)
+
+    for i, data in enumerate(sanitized_datas[1:]):
+        filled = data.fillna(data.mean())
+        sanitized_datas[i + 1] = filled
+
+    # Reconstruct DataFrame
+    sanitized_df = pd.DataFrame({
+        col.replace("📈 ", "").replace(" Plot", "").lower(): series
+        for col, series in zip(column_names, sanitized_datas)
+    })
+
+    sanitized_df['date'] = dates
+    sanitized_df = sanitized_df[['date'] + [col for col in sanitized_df.columns if col != 'date']]
+
+    print("\nPrinting the data after sanitizing...\n")
+    for name, series in zip(column_names, sanitized_datas):
+        null_count = series.isnull().sum()
+        if null_count > 0:
+            print(f"🚫 {name} has {null_count} missing values.")
+
+        else:
+            print(f"✅ {name} is complete — no missing values.")
+
+    return sanitized_df
 
 if __name__ == '__main__':
     from fetch_n_save_data import raw_stock_data

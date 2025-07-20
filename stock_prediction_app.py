@@ -33,33 +33,25 @@ def data_frm_streamlit():
 selected_stock,selected_stock_data, selected_full_name = data_frm_streamlit()
 
 
-if selected_stock:
-
+def handle_stock_selection(selected_stock, selected_stock_data, selected_full_name, today):
     st.write(selected_stock_data.reset_index(drop=True))
     st.subheader(f'Stock Data for {selected_full_name}')
     st.write(f"Today's date: {today}")
 
-    # 🧠 Get refresh date only for selected symbol
     _, last_refresh = get_latest_stock_file_date(selected_stock)
     st.write(f"{selected_stock}'s last refresh date: {last_refresh}")
 
-
-    # ✅ Initialize session keys
     if "refresh_stock_data" not in st.session_state:
         st.session_state.refresh_stock_data = None
 
     if "prev_selected_stock" not in st.session_state:
         st.session_state.prev_selected_stock = None
 
-    # 🔁 Reset refresh choice on new selection
-    if selected_stock and selected_stock != st.session_state.prev_selected_stock:
+    if selected_stock != st.session_state.prev_selected_stock:
         st.session_state.refresh_stock_data = None
         st.session_state.prev_selected_stock = selected_stock
 
-    # 🧠 Display prompt
-    st.markdown("#### Do you want to download fresh stock data?") # Text smaller than subheader
-
-    # 🖱️ Buttons update session state only on click
+    st.markdown("#### Do you want to download fresh stock data?")
     col1, col2, _ = st.columns([1, 1, 8])
     with col1:
         if st.button("✅ Yes"):
@@ -68,63 +60,49 @@ if selected_stock:
         if st.button("❌ No"):
             st.session_state.refresh_stock_data = "n"
 
-    # 🔄 Run logic only after user makes a decision
     if st.session_state.refresh_stock_data == "y":
         st.success("🔄 Fresh stock data will be downloaded.")
-        raw_stock_df = raw_stock_data(
-            user_input=selected_stock,
-            refresh_stock_data="y"
-        )
+        raw_stock_df = raw_stock_data(user_input=selected_stock, refresh_stock_data="y")
         processed_stock_df = processed_stock_data(raw_stock_df)
         _, column_names, dates, null_count_dict = label_frm_columns(processed_stock_df)
-
         datas, null_dict = sanitized_data(processed_stock_df)
 
         st.write(processed_stock_df)
-        # st.subheader("Showing the raw data null count below:")
         st.markdown(f"##### Showing the raw data null count below:")
         st.markdown(f"####### {null_count_dict}")
-
-        # Total data count
-        # st.subheader("Showing the total data below, after filling null with mean:")
         st.markdown(f"##### Showing the total data below, after filling null with mean:")
         st.markdown(f"####### {null_dict}")
 
-
-        # Call the Plot function
         fig = stock_plot(datas=datas, column_names=column_names, dates=dates)
         st.plotly_chart(fig, use_container_width=True)
 
+        # After user selects "Yes"
+        return selected_stock, st.session_state.refresh_stock_data
 
     elif st.session_state.refresh_stock_data == "n":
         st.info("📁 Using local stock data.")
-        raw_stock_df = raw_stock_data(
-            user_input=selected_stock,
-            refresh_stock_data="n"
-        )
+        raw_stock_df = raw_stock_data(user_input=selected_stock, refresh_stock_data="n")
         processed_stock_df = processed_stock_data(raw_stock_df)
         _, column_names, dates, null_count_dict = label_frm_columns(processed_stock_df)
-
         datas, null_dict = sanitized_data(processed_stock_df)
 
         st.write(processed_stock_df)
-        # st.subheader("Showing the raw data null count below:")
         st.markdown(f"##### Showing the raw data null count below:")
         st.markdown(f"####### {null_count_dict}")
-
-        # Total data count
-        # st.subheader("Showing the total data below, after filling null with mean:")
         st.markdown(f"##### Showing the total data below, after filling null with mean:")
         st.markdown(f"####### {null_dict}")
 
-        # Call the Plot function
         fig = stock_plot(datas=datas, column_names=column_names, dates=dates)
         st.plotly_chart(fig, use_container_width=True)
 
+        # After user selects "No"
+        return selected_stock, st.session_state.refresh_stock_data
+
     else:
         st.info("📌 Waiting for your choice: Download fresh data or use local.")
+        return None, None
+
+if selected_stock:
+    user_input, refresh_flag = handle_stock_selection(selected_stock, selected_stock_data, selected_full_name, today)
 else:
     st.warning("⚠️ Please select a valid stock symbol from the dropdown.")
-
-
-
