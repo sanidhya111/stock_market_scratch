@@ -83,7 +83,7 @@ def plot_regression_overlay(y_actual, y_predicted, title="Future Return",
                  bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 
 def plot_classification_overlay(y_actual, y_predicted, class_map=None,
@@ -127,7 +127,7 @@ def plot_classification_overlay(y_actual, y_predicted, class_map=None,
         ax2.set_ylabel("True Label")
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 
 def plot_histogram(data, bins=50, title="Distribution", xlabel="Value", ylabel="Frequency",
@@ -161,7 +161,7 @@ def plot_histogram(data, bins=50, title="Distribution", xlabel="Value", ylabel="
                  bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 # Not used in main.py
 def visualize_predictions(y_reg_test, y_pred_reg, y_pred_class, confidences,
@@ -184,7 +184,7 @@ def visualize_predictions(y_reg_test, y_pred_reg, y_pred_class, confidences,
         column_names=list(plot_data_dict.keys()),
         enhanced_styling=enhanced_layout
     )
-    plt.show()
+    # plt.show()
     return fig
 
 
@@ -204,4 +204,4 @@ def plot_feature_importance(feature_names, importances, title="Feature Importanc
     plt.xlabel('Importance Score')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.show()
+    # plt.show()

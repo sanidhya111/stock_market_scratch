@@ -3,10 +3,13 @@ import streamlit as st
 from fetch_n_save_data import raw_stock_list, raw_stock_data
 from data_processing import processed_stock_data, get_latest_stock_file_date, label_frm_columns, sanitized_data
 import datetime
-from data_visualization import stock_plot
+from data_visualization import (
+    stock_plot,
+    plot_regression_overlay_plotly,
+    plot_classification_overlay_plotly,
+    visualize_predictions_plotly
+)
 from ai_prediction import train_and_predict  # IMPORT FROM MODULE
-from visualization_matplot import (plot_regression_overlay, plot_classification_overlay,
-                                   plot_histogram, visualize_predictions)
 import matplotlib.pyplot as plt
 
 # ALL YOUR EXISTING CODE REMAINS EXACTLY THE SAME
@@ -126,7 +129,6 @@ if selected_stock and processed_stock_df is not None:
             if results:
                 st.success("✅ AI Analysis completed!")
 
-                # Display results
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Accuracy", f"{results['metrics']['accuracy']:.1%}")
@@ -136,47 +138,41 @@ if selected_stock and processed_stock_df is not None:
                     latest_signal = results['prediction_df']['final_signal'].iloc[-1]
                     st.metric("Latest Signal", latest_signal)
 
-                # Show predictions
                 st.subheader("Recent Predictions")
                 st.dataframe(results['prediction_df'].tail(10))
 
-                # Use YOUR visualization functions
                 test_data = results['test_data']
 
-                with st.expander("Regression Analysis"):
-                    fig1 = plt.figure(figsize=(12, 5))
-                    plot_regression_overlay(
-                        y_actual=test_data['y_reg_test'].values,
-                        y_predicted=test_data['y_pred_reg'],
-                        title="Future Return",
-                        xlabel="Test Sample Index",
-                        ylabel="Return"
-                    )
-                    st.pyplot(fig1)
-                    plt.close()
+                # ✅ Show all plots simultaneously
+                st.markdown("## 📊 All AI Visualizations")
 
-                with st.expander("Classification Analysis"):
-                    fig2 = plt.figure(figsize=(12, 4))
-                    plot_classification_overlay(
-                        y_actual=test_data['y_class_test'],
-                        y_predicted=test_data['y_pred_class'],
-                        class_map=results['signal_map'],
-                        title="Signal",
-                        xlabel="Test Sample Index",
-                        ylabel="Signal"
-                    )
-                    st.pyplot(fig2)
-                    plt.close()
+                # Regression Plot
+                fig1 = plot_regression_overlay_plotly(
+                    y_actual=test_data['y_reg_test'].values.tolist(),
+                    y_predicted=test_data['y_pred_reg'].tolist(),
+                    title="Future Return",
+                    xlabel="Test Sample Index",
+                    ylabel="Return"
+                )
+                st.plotly_chart(fig1, use_container_width=True)
 
-                with st.expander("Complete Overview"):
-                    fig3 = plt.figure(figsize=(15, 12))
-                    visualize_predictions(
-                        test_data['y_reg_test'].values,
-                        test_data['y_pred_reg'],
-                        test_data['y_pred_class'],
-                        test_data['confidences']
-                    )
-                    st.pyplot(fig3)
-                    plt.close()
-            else:
-                st.error(f"❌ Analysis failed: {message}")
+                # Classification Plot
+                fig2 = plot_classification_overlay_plotly(
+                    y_actual=test_data['y_class_test'].tolist(),
+                    y_predicted=test_data['y_pred_class'].tolist(),
+                    class_map=results['signal_map'],
+                    title="Signal",
+                    xlabel="Test Sample Index",
+                    ylabel="Signal"
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+
+                fig3 = visualize_predictions_plotly(
+                    y_reg_test=test_data['y_reg_test'].values.tolist(),
+                    y_pred_reg=test_data['y_pred_reg'].tolist(),
+                    y_pred_class=test_data['y_pred_class'].tolist(),
+                    confidences=test_data['confidences'].tolist(),
+                    class_map=results['signal_map']
+                )
+                st.plotly_chart(fig3, use_container_width=True)
+

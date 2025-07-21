@@ -7,7 +7,7 @@ from fetch_n_save_data import raw_stock_data
 from data_processing import processed_stock_data, sanitized_data_df
 from visualization_matplot import (stock_plot,
                                    plot_regression_overlay,
-                                   plot_classification_overlay,
+                                   plot_classification_overlay, visualize_predictions,
                                    plot_histogram)
 import seaborn as sns
 from ai_prediction import train_and_predict  # IMPORT FROM MODULE
@@ -58,7 +58,7 @@ if results:
         datas=list(plot_data_dict.values()),
         column_names=list(plot_data_dict.keys())
     )
-    plt.show()
+    # plt.show()
 
     plot_regression_overlay(
         y_actual=test_data['y_reg_test'].values,
